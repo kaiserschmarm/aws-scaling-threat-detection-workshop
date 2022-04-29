@@ -46,6 +46,8 @@ Unfortunately, due to a misconfiguration in your environment, an attacker may ha
 
 By now you’ve received email alerts from the security services you enabled. Now what? As part of your risk driven detection strategy your organization has decided to prioritize AWS IAM related findings.  
 
+!!! info "When the CloudFormation Stack created in Module 2 is complete, findings may take 15-20 minutes to generate"
+
 1. Sort through your email alerts and identity an alert related to an AWS IAM principal
 
     !!! info "Amazon GuardDuty Finding: UnauthorizedAccess:IAMUser/MaliciousIPCaller.Custom"
@@ -160,15 +162,15 @@ All active credentials for the compromised IAM role have been invalidated.  This
 
 6. In the <a href="https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Instances:sort=instanceId" target="_blank">EC2 console</a> **Stop** the Instance named **threat-detection-wksp: Compromised Instance**.
 
-    Check the box next to the instance, select the **Actions menu**, **Instance State**, **Stop**, confirm by pressing **Yes**, **Stop**
+    Check the box next to the instance, select the **Instance state** menu, select **Stop instance**, confirm by pressing **Stop**
 
-7. Wait for the Instance State to say **stopped** under **Instance State** (you may need to refresh the EC2 console) and then **Start** the instance.
+7. Wait for the Instance State to say **stopped** under **Instance State** (you may need to refresh the EC2 console) and then **Start** the instance by again selecting the **Instance state** menu and then **Start instance**.
 
     !!! info "You will need to wait until all Status Checks have passed before continuing."
 
     **Verify the access keys have been rotated (Systems Manager)**
 
-8.  Go to <a href="https://us-west-2.console.aws.amazon.com/systems-manager/session-manager?region=us-west-2" target="_blank">AWS Systems Manager</a> console and click on **Session Manager** on the left navigation and then click **Start Session**.  
+8.  Go to <a href="https://us-west-2.console.aws.amazon.com/systems-manager/session-manager?region=us-west-2" target="_blank">AWS Systems Manager</a> console and click on **Session Manager** on the left navigation under **Node Management** and then click **Start Session**.  
 
     You should see an instance named **threat-detection-wksp: Compromised Instance** with a **Instance state** of **running**.
     
@@ -252,8 +254,6 @@ Click on the finding regarding SSH and password authentication for the instance 
 4. In the results do you see a finding regarding SSH and password authentication for the instance that experienced the SSH brute force attack? 
 -->
 
-!!! info "If you do not see any findings after a while, there may have been an issue with your Inspector agent.  Go to the <a href="https://us-west-2.console.aws.amazon.com/inspector" target="_blank">Inspector</a> console, click on **Assessment Templates**, check the template that starts with **threat-detection-wksp**, and click **Run**.  Please allow **15 minutes** for the scan to complete.  You can also look in **Assessment runs** and check the **status**. Feel free to continue through this module and check the results later on." 
-
 After review you should see that password authentication over SSH is configured on the instance. In addition, if you examine some of the other Inspector findings you will see that there are no password complexity restrictions. This means the instance is more susceptible to an SSH brute force attack. 
 
 <!--
@@ -287,9 +287,9 @@ Now that we know that the instance was more susceptible to an SSH brute force at
 
 **Modify the EC2 security group (EC2)**
 
-The active session from the attacker was automatically stopped by an update to the NACL on the subnet where the instance resides. This was done by a CloudWatch event rule trigger that is invoked based on certain GuardDuty findings.   
+The active session from the attacker was automatically stopped by an update to the NACL on the subnet where the instance resides. This was done by an EventBridge rule trigger that is invoked based on certain GuardDuty findings.   
 
-1. Look through the <a href="https://us-west-2.console.aws.amazon.com/events/home?region=us-west-2#/rules/" target="_blank">Cloudwatch Event Console </a> to identify how the automation was triggered. 
+1. Look through the <a href="https://us-west-2.console.aws.amazon.com/events/home?region=us-west-2#/rules/" target="_blank">EventBridge Console </a> to identify how the automation was triggered. 
 2. Look through the <a href="https://us-west-2.console.aws.amazon.com/lambda/home?region=us-west-2#/functions" target="_blank">Lambda Functions </a> . 
 
     !!!info "How would you modify these to suit your own environment." 
@@ -302,15 +302,15 @@ This attack was successfull because SSH was enabled on the instance. You've deci
 
 2.  Find the running instances with the name **threat-detection-wksp: Compromised Instance**.
 
-3.  Under the **Description** tab, click on the Security Group for the compromised instance.
+3.  Check the box next to the instance, and select the **Security** tab, click on the Security Group for the compromised instance.
 
 4.  View the rules under the **Inbound** tab.
 
-5.  Click **Edit** and delete the inbound SSH rule.
+5.  Click **Edit inbound rules** and Click **Delete**  for the inbound SSH rule.
 
     !!! info "The SSM Agent was installed on your EC2 Instance during the initial configuration."
     
-6. Click **Save**
+6. Click **Save rules**
 
 
 <!-- ## Part 3 - Compromised S3 bucket

@@ -21,7 +21,7 @@ US West 2 (Oregon) | <a href="https://console.aws.amazon.com/cloudformation/home
 
 2. The name of the stack will be automatically populated but you are free to change it, after which click **Next**, then **Next** again (leave everything on this page at the default).  
 
-3. Finally, acknowledge that the template will create IAM roles and click **Create**
+3. Finally, acknowledge that the template will create IAM roles and click **Create stack**
 
 ![IAM Capabilities](./images/iam-capabilities.png)
 

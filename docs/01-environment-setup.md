@@ -13,11 +13,21 @@ In this first module you will be configuring detective and responsive controls f
 
 Our first step is to enable Amazon GuardDuty, which will continuously monitor your environment for malicious or unauthorized behavior.
 
+!!! warning "If these enablement steps are missed, some resources deployed during the next steps will not configure properly such as the custom threat list within GuardDuty" 
+
 1.	Go to the <a href="https://us-west-2.console.aws.amazon.com/guardduty/home?region=us-west-2" target="_blank">Amazon GuardDuty</a> console (us-west-2).
 2.	If the **Get Started** button is available, click it. If not GuardDuty is enabled and skip step three.
 3.	On the next screen click the **Enable GuardDuty** button.
 
-GuardDuty is now enabled and continuously monitoring your CloudTrail logs, VPC flow logs, and DNS Query logs for threats in your environment.
+GuardDuty is now enabled and continuously monitoring your CloudTrail logs, VPC flow logs, DNS Query logs, and EKS audit logs for threats in your environment.
+
+## Enable Amazon Inspector
+
+Our next step is to enable Amazon Inspector, which will continually scan workloads for software vulnerabilities and unintended network exposure.
+
+1. Go to the <a href="https://us-west-2.console.aws.amazon.com/inspector/v2/home?region=us-west-2" target="_blank">Amazon Inspector</a> console (us-west-2).
+2. If the **Get Started** button is available, click it. If not Inspector is enabled and skip step three.
+3. On the next screen click the **Enable Inspector** button.
 
 ## Deploy the AWS CloudFormation template
 
@@ -41,7 +51,7 @@ US West 2 (Oregon) | <a href="https://console.aws.amazon.com/cloudformation/home
 3. Once you have entered your parameters click **Next**, 
 4. Click **Next** again. \(leave everything on this page at the default\)
 
-5. Finally, scroll down and check the box to acknowledge that the template will create IAM roles and click **Create**.
+5. Finally, scroll down and check the box to acknowledge that the template will create IAM roles and click **Create stack**.
 
 ![IAM Capabilities](./images/iam-capabilities.png)
 
@@ -53,21 +63,28 @@ This will bring you back to the CloudFormation console. You can refresh the page
 
  You will get an email from SNS asking you to confirm the Subscription. **Confirm the subscription** so you can receive email alerts from AWS services during the workshop. The email may take 2-3 minutes to arrive, check your spam/junk folder if it doesn’t arrive within that timeframe.
 
-## Setup Amazon CloudWatch event rules and automatic response
+## Setup Amazon EventBridge rules and automatic response
 
-The CloudFormation template you just ran created <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/WhatIsCloudWatchEvents.html" target="_blank">CloudWatch Event Rules</a> for alerting and response purposes. The steps below will walk you through creating the final rule.  After this you'll have rules in place to receive email notifications and trigger AWS Lambda functions to respond to threats.
+The CloudFormation template you just ran created <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html" target="_blank">EventBridge Rules</a> for alerting and response purposes. The steps below will walk you through creating the final rule.  After this you'll have rules in place to receive email notifications and trigger AWS Lambda functions to respond to threats.
 
 Below are steps to create a rule through the console but you can also find out more about doing it programmatically by reviewing the <a href="http://docs.aws.amazon.com/guardduty/latest/ug/guardduty_findings_cloudwatch.html" target="_blank">Amazon GuardDuty Documentation</a>.
 
-1.	Open the <a href="https://us-west-2.console.aws.amazon.com/cloudwatch/home?region=us-west-2" target="_blank">CloudWatch console</a> (us-west-2)
+1.	Open the <a href="https://us-west-2.console.aws.amazon.com/events/home?region=us-west-2" target="_blank">EventBridge console</a> (us-west-2)
 2.	In the navigation pane on the left, under **Events**, click **Rules**
 
 	!!! question "What are the current Rules in place setup to do?"
 	
-3.	Click **Create Rule**
+3.	Click **Create rule**
 
-4.	Select **Event Pattern** click the dropdown labeled **Build event pattern to match events by service** and 
-select **Custom event pattern** in the drop down.
+4.	On the **Define rule detail** screen fill out the **Name** and **Description** (suggestions below).
+    * Name: **threat-detection-wksp-guardduty-finding-ec2-maliciousip**
+    * Description: **GuardDuty Finding: UnauthorizedAccess:EC2/MaliciousIPCaller.Custom**
+
+5.  Select **Rule with an event pattern** under **Rule type** if not already selected
+
+6.  Click **Next**
+
+7.  Under **Event pattern** Click **Edit pattern**
 
 Copy and paste in the custom event pattern below:
 	
@@ -84,13 +101,20 @@ Copy and paste in the custom event pattern below:
 }
 ```
 	
-5. For *Targets*, click **Add Target**, select **Lambda Function**, and then select **threat-detection-wksp-remediation-nacl**. 
-Click **Configure details** at the bottom.
+8.  Click **Next**
 
-6.	On the **Configure rule details** screen fill out the **Name** and **Description** (suggestions below).
-    * Name: **threat-detection-wksp-guardduty-finding-ec2-maliciousip**
-    * Description: **GuardDuty Finding: UnauthorizedAccess:EC2/MaliciousIPCaller.Custom**
-7. Click **Create rule**.
+9.  For **Target 1**, click **AWS service** under *Target types*, select **Lambda Function** from the dropdown under *Select a target*, and then select **threat-detection-wksp-remediation-nacl** from the dropdown under *Function*.
+
+10.  Select **Add another target**
+
+11.  For **Target 2**, click **AWS service** under *Target types*, select **SNS topic** from the dropdown under *Select a target*, and then select **threat-detection-wksp** from the dropdown under *Topic*
+
+12.  Click **Next**
+
+13.  Click **Next** again
+
+14.  Click **Create rule**
+
 **Optional:** Consider examining the Lambda function to see what it does.  Open the <a href="https://us-west-2.console.aws.amazon.com/lambda/home?region=us-west-2" target="_blank">Lambda console</a>. Click on the function named **threat-detection-wksp-remediation-nacl**
 
     !!! question "What will the function do when invoked?"

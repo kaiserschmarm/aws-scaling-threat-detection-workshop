@@ -46,11 +46,11 @@ In **Module 3** you investigated the attack, remediated the damage, and setup so
 	
 	!!! info "**GuardDuty Finding**: Recon:IAMUser/MaliciousIPCaller.Custom or **GuardDuty Finding**: UnauthorizedAccess:IAMUser/MaliciousIPCaller.Custom"
 
-8. A number of CloudWatch Events Rules are evoked by the GuardDuty findings and then these trigger various services.
-	1.	**CloudWatch Event Rule**: The generic GuardDuty finding invokes a CloudWatch Event rule which triggers SNS to send an email.
+8. A number of EventBridge Rules are evoked by the GuardDuty findings and then these trigger various services.
+	1.	**EventBridge Rule**: The generic GuardDuty finding invokes an EventBridge rule which triggers SNS to send an email.
 	<!-- 2.	**CloudWatch Event Rule**: The generic Macie alert invokes a CloudWatch Event rule which triggers SNS to send an email. -->
-	3.	**CloudWatch Event Rule**: The SSH brute force attack finding invokes a CloudWatch Event rule which triggers a Lambda function to block the attacker IP address of the attacker via a NACL as well as a Lambda function that runs an Inspector scan on the EC2 instance.
-	4. **CloudWatch Event Rule**: The Unauthorized Access Custom MaliciousIP finding invokes a CloudWatch Event rule which triggers a Lambda function to block the IP address of the attacker via a NACL.
+	3.	**EventBridge Rule**: The SSH brute force attack finding invokes an EventBridge rule which triggers a Lambda function to block the attacker IP address of the attacker via a NACL as well as a Lambda function that runs an Inspector scan on the EC2 instance.
+	4. **EventBridge Rule**: The Unauthorized Access Custom MaliciousIP finding invokes an EventBridge rule which triggers a Lambda function to block the IP address of the attacker via a NACL.
 
 <!-- 5. The EC2 Instance that is created in the **Module** 2 CloudFormation template disabled default encryption on the **Data** bucket.  In addition the CloudFormation template made the **Data** bucket public.  This is used for the Macie part of the investigation in Module 3. We pretend that the attacker made the bucket public and removed the default encryption from the bucket.
 	
@@ -63,30 +63,43 @@ In order to prevent charges to your account we recommend cleaning up the infrast
 
 !!! info "If you are running this in your own account. You will need to manually delete some resources before you delete the CloudFormation stacks so please do the following steps in order."
 
-1.	Delete the Inspector objects created for the workshop.
-	* Go to the <a href="https://us-west-2.console.aws.amazon.com/inspector" target="_blank">Amazon Inspector</a> console.
+1.	Disable Inspector (if you didn't already have this enabled).
+	* Go to the <a href="https://us-west-2.console.aws.amazon.com/inspector/v2/home" target="_blank">Amazon Inspector</a> console.
+	* Click on **General** under **Settings** in the navigation pane on the left.
+	* Click on **Disable Inspector**.
+	* Enter **disable** in the text input field.
+	* Click **Disable Inspector**.
+	* Expand the left navigation menu.
+	* Click **Switch to Inspector Classic**.
 	* Click on **Assessment targets** in the navigation pane on the left.
-	* Delete all that start with **threat-detection-wksp**.
+	* Delete all targets that start with **threat-detection-wksp**.
 
 2.	Delete the IAM Role for the compromised EC2 instance and the Service-Linked Role for Inspector (if you didn't already have this Role created).
 	* Go to <a href="https://console.aws.amazon.com/iam/" target="_blank">AWS IAM</a> console.
 	* Click on **Roles**
 	* Search for the role named **threat-detection-wksp-compromised-ec2**.
-	* Click the check box next to it and click **Delete**.
+	* Click the check box next to it and click **Delete** enter the role name into the text input field and Click **Delete**.
 	* Repeat the steps above for the role named **AWSServiceRoleForAmazonInspector**.
 
 3.	Delete all three S3 buckets created by the Module 1 CloudFormation template (the buckets that start with **threat-detection-wksp** and end with **-data**, **-threatlist** and **-logs**)
+
+    !!! info "You must first empty the objects in each bucket before they can be deleted"
+
 	* Go to <a href="https://s3.console.aws.amazon.com/s3/home?region=us-west-2" target="_blank">Amazon S3</a> console.
 	* Click on the appropriate bucket.
-	* Click **Delete Bucket**.
-	* Copy and paste the name of the bucket (this is an extra verification that you actually want to delete the bucket).
+	* Click **Empty**.
+	* Confirm deletion by typing *permanently delete* in the text input field.
+	* Click **Empty**.
+	* Click **Exit**.
+	* Click **Delete**.
+	* Confirm deletion of the bucket by typing the name of the bucket in the text input field (this is an extra verification that you actually want to delete the bucket).
+	* Click **Delete bucket**.
 	* Repeat the steps above for all three buckets.
 
 4.	Delete Module 1 and 2 CloudFormation stacks (**ThreatDetectionWksp-Env-Setup** and **ThreatDetectionWksp-Attacks**).
 	* Go to the <a href="https://us-west-2.console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks?filter=active" target="_blank">AWS CloudFormation</a> console.
 	* Select the appropriate stack.
-	* Select **Action**.
-	* Click **Delete Stack**.
+	* Click **Delete**.
 	* Repeat the steps above for each stack.
 
 	!!! info "You do not need to wait for the first stack to delete before you delete the second one."
@@ -95,9 +108,7 @@ In order to prevent charges to your account we recommend cleaning up the infrast
 	* Go to the <a href="https://us-west-2.console.aws.amazon.com/guardduty/" target="_blank">Amazon GuardDuty</a> console.
 	* Click on **Lists** on the left navigation.
 	* Click the **X** next to the threat list that starts with **Custom-Threat-List**.
-	* Click **Settings** in the navigation pane on the left navigation.
-	* Click the check box next to **Disable**.
-	* Click **Save settings** and then click **Disable** in the pop-up box.
+	* Click **Delete**
 
 6.	Disable AWS Security Hub
 	* Go to the <a href="https://us-west-2.console.aws.amazon.com/securityhub/home?region=us-west-2#/findings" target="_blank">AWS Security Hub</a> console.
@@ -105,24 +116,21 @@ In order to prevent charges to your account we recommend cleaning up the infrast
 	* Click the **General** on the top navigation.
 	* Click **Disable AWS Security Hub**.
 
-6.	Delete the manual CloudWatch Event Rule you created and the CloudWatch Logs that were generated.
-	* Go to the <a href="https://us-west-2.console.aws.amazon.com/cloudwatch" target="_blank">AWS CloudWatch</a> console.
+6.	Delete the manual EventBridge Rule you created and the CloudWatch Logs that were generated.
+	* Go to the <a href="https://us-west-2.console.aws.amazon.com/events" target="_blank">EventBridge</a> console.
 	* Click on **Rules** in the navigation pane on the left.
 	* Click the radio button next **threat-detection-wksp-guardduty-finding-maliciousip**.
-	* Select **Action** and click **Delete**.
-	* Click on **Logs** in the navigation pane on the left.
-	* Click the radio button next to **/aws/lambda/threat-detection-wksp-inspector-role-creation**.
-	* Select **Action** and click **Delete log group** and then click **Yes, Delete** in the pop-up box.
-	* Repeat for: 
-		* **/aws/lambda/threat-detection-wksp-remediation-inspector**
-		* **/aws/lambda/threat-detection-wksp-remediation-nacl**
-		* **/threat-detection-wksp/var/log/secure** 
+	* Click **Delete**.
+	* Go to the <a href="https://us-west-2.console.aws.amazon.com/cloudwatch" target="_blank">CloudWatch</a> console.
+	* Click on **Log groups** in the navigation pane on the left.
+	* Select the Log groups containing **threat-detection-wksp**
+	* Select **Action** and click **Delete log group(s)** and then click **Delete**.
 
 7.	Delete the SNS subscription that was created when you subscribed to SNS Topic.
 	* Go to the <a href="https://us-west-2.console.aws.amazon.com/sns" target="_blank">AWS SNS</a> console.
 	* Click on **Subscriptions** on the left navigation.
-	* Select the check box next to the subscription that shows your e-mail as the Endpoint and has **threat-detection-wksp** in the **Subscription ARN**.
-	* Select **Action** and then click **Delete subscriptions**
+	* Select the radio field next to the subscription that shows your e-mail as the Endpoint and has **threat-detection-wksp** in the **Subscription ARN**.
+	* Click **Delete**
 
 <!--8.	Disable Macie (if you didn't already have Macie enabled before the workshop).
 	* Go the <a href="https://mt.us-west-2.macie.aws.amazon.com/" target="_blank">Amazon Macie</a> console.
